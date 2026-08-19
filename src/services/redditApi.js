@@ -1,28 +1,53 @@
 export async function getHotPosts(subreddit) {
-  console.log(`Attempting to fetch data for r/${subreddit}`);
-
-  // 1. Try the most reliable proxy method
-  try {
-    const targetUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
-    
-    const response = await fetch(proxyUrl);
-    if (response.ok) {
-      const result = await response.json();
-      const data = JSON.parse(result.contents);
-      if (data?.data?.children?.length) {
-        const posts = data.data.children.map(item => item.data);
-        console.log(`✅ Successfully fetched ${posts.length} real posts.`);
-        return posts;
-      }
-    }
-  } catch (error) {
-    console.warn('Proxy fetch failed:', error.message);
-  }
-
-  // 2. Fallback to sample data
-  console.log(`🔄 Using fallback sample data for r/${subreddit}`);
+  // Use a working Reddit API wrapper
+  const url = `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`;
   
+  try {
+    // Use a different proxy that works on Vercel
+    const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    if (!data.data || !data.data.children) {
+      throw new Error('Invalid response');
+    }
+    
+    const posts = data.data.children.map(item => item.data);
+    console.log(`✅ Got ${posts.length} real posts from r/${subreddit}`);
+    return posts;
+    
+  } catch (error) {
+    console.error('Proxy failed, trying fallback...');
+    
+    // Fallback: Use a different proxy
+    try {
+      const fallbackUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      const response = await fetch(fallbackUrl);
+      
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      
+      const data = await response.json();
+      
+      if (!data.data || !data.data.children) {
+        throw new Error('Invalid response');
+      }
+      
+      const posts = data.data.children.map(item => item.data);
+      console.log(`✅ Got ${posts.length} real posts from r/${subreddit} (fallback)`);
+      return posts;
+      
+    } catch (fallbackError) {
+      console.error('All proxies failed, using sample data');
+      return getSampleData(subreddit);
+    }
+  }
+}
+
+function getSampleData(subreddit) {
   const samplePosts = [
     { title: `Amazing new developments in ${subreddit}`, ups: 12421, num_comments: 832, author: "techguru" },
     { title: `Why is everything broken in ${subreddit}?`, ups: 4200, num_comments: 421, author: "frustrateduser" },
@@ -36,10 +61,6 @@ export async function getHotPosts(subreddit) {
     { title: `Why does ${subreddit} keep changing?`, ups: 2800, num_comments: 456, author: "confusedperson" }
   ];
   
-  // Add a slight delay to simulate network request
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Return sample data with randomized scores for realism
   return samplePosts.map(post => ({
     ...post,
     score: Math.floor(Math.random() * 10) - 3
