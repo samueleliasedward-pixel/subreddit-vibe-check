@@ -1,5 +1,4 @@
 export async function getHotPosts(subreddit) {
-  // Call your own Vercel serverless function (no CORS!)
   const url = `/api/reddit?subreddit=${encodeURIComponent(subreddit)}`;
   
   try {
