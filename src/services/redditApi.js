@@ -1,22 +1,21 @@
 export async function getHotPosts(subreddit) {
-  // Use Reddit's JSON endpoint (works with CORS)
-  const url = `https://www.reddit.com/r/${subreddit}/.json?limit=50`;
+  // Use allorigins.win with the correct endpoint format
+  const targetUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
   
   try {
-    console.log(`Fetching real data from: ${url}`);
+    console.log(`Fetching real data from: ${proxyUrl}`);
     
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (compatible; RedditVibeCheck/1.0)'
-      }
-    });
+    const response = await fetch(proxyUrl);
     
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     
-    const data = await response.json();
+    const result = await response.json();
+    
+    // Parse the contents (allorigins wraps the response)
+    const data = JSON.parse(result.contents);
     
     if (!data.data || !data.data.children) {
       throw new Error('Invalid response from Reddit');
