@@ -1,7 +1,7 @@
 export async function getHotPosts(subreddit) {
-  // Using working CORS proxy for real Reddit data
+  // Use allorigins.win proxy (more reliable)
   const targetUrl = `https://www.reddit.com/r/${subreddit}/hot.json?limit=50`;
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
   
   try {
     const response = await fetch(proxyUrl);
